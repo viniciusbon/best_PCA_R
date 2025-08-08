@@ -36,21 +36,7 @@ RStudio (Recomendado): Um ambiente de desenvolvimento integrado para R que facil
 
 Pacotes R: O script foi desenvolvido para verificar e instalar automaticamente os seguintes pacotes, caso eles não estejam presentes no seu ambiente:
 
-readxl
-
-ggplot2
-
-tidyr
-
-tibble
-
-dplyr
-
-tools
-
-writexl
-
-ggrepel (para os rótulos dos gráficos)
+readxl, ggplot2, tidyr, tibble, dplyr, tools, writexl e ggrepel.
 
 🚀 Como Usar
 Faça o download do arquivo analise_pca.R.

@@ -1,5 +1,6 @@
 # best_PCA_R
 The following repository contains an R script to perform professional Principal Component Analysis in RStudio. The code is practical, tested, and includes the PCA analysis, related scores, and beautiful figures for your article. O repositório a seguir contém um script em R para realizar uma Análise de Componentes Principais profissional no RStudio.
+
 Análise de Componentes Principais (PCA) em R (Versão Aprimorada)
 Este repositório contém um script em R (analise_pca.R) projetado para automatizar e simplificar a Análise de Componentes Principais (PCA). O objetivo é fornecer uma ferramenta robusta e de fácil configuração para pesquisadores e analistas de dados que desejam explorar a estrutura de seus dados, reduzir a dimensionalidade e visualizar os resultados de forma clara e informativa.
 

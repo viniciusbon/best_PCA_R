@@ -161,7 +161,7 @@ loadings_plot_barras <- ggplot(loadings_long_df, aes(x = reorder(Variavel, Influ
   labs(
     title = "Loadings do PC1 e PC2",
     x = NULL,
-    y = "Valor do Loading (Influência)"
+    y = "Valor do Loading"
   ) +
   scale_fill_manual(values = c("PC1" = "#1f77b4", "PC2" = "#ff7f0e")) +
   tema_graficos +
@@ -247,3 +247,4 @@ cat("  - Tabela de resultados salva como Excel em '", caminho_excel, "'.\n")
 
 
 cat("\nAnálise finalizada! Outputs de dados e gráficos foram salvos na pasta '", pasta_output, "'.\n")
+

@@ -6,6 +6,14 @@ Este repositório contém um script em R (analise_pca.R) projetado para automati
 
 Importante: Tem a versão com legenda das figuras em inglês e em portugues.
 Importantly: it includes versions with figure captions in both English and Portuguese.
+<p align="center"> Gráficos Gerados: </p> <br/>
+
+<p align="center">
+
+  <img src="https://media.discordapp.net/attachments/623300452552802305/1403432439870652548/Scores.jpeg?ex=689787d0&is=68963650&hm=7a387e5058e0d88ffeb8a774939a2b0ef708886a5e235ef87d7032ed5b577d8e&=&format=webp&width=658&height=370" alt="Scores" width="300">
+  <img src="https://media.discordapp.net/attachments/623300452552802305/1403432335973814392/Loading.jpeg?ex=689787b7&is=68963637&hm=95547d6929598e6fb27a5c3bdbcabc08fea7497c03a6663030346b498b826bdb&=&format=webp&width=658&height=370" alt="Loading" width="300">
+  <img src="https://media.discordapp.net/attachments/623300452552802305/1403432294336696420/Biplot.jpeg?ex=689787ad&is=6896362d&hm=6ccc786f5ee4e5ff9c95ef5ba767006b8601cc14b2b462be4e18a4a1108daf55&=&format=webp&width=658&height=370" alt="Biplot" width="300">
+</p>
 
 📜 Descrição
 A PCA é uma técnica estatística poderosa usada para simplificar a complexidade em dados com muitas variáveis. Este script guia o usuário através de todo o processo: desde o carregamento dos dados, passando pelo tratamento de valores ausentes (imputação pela média), até a execução da PCA e a geração de saídas essenciais para a interpretação dos resultados, como gráficos e tabelas detalhadas.
@@ -84,6 +92,9 @@ Peso	0.3811	0.1452	0.4987	0.2487
 Altura	-0.3755	0.1410	-0.4501	0.2026
 
 Exportar para as Planilhas
+
+
+
 👤 [Vinicius Mantovam]
 
 Data da última versão: 2025-08-08

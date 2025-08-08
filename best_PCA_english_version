@@ -1,0 +1,275 @@
+# ===================================================================
+# PRINCIPAL COMPONENT ANALYSIS (PCA) SCRIPT
+#
+# DESCRIPTION: This script loads a dataset, handles missing values,
+# performs a PCA, and then generates and saves visualizations and reports.
+# If you liked it and found it functional, follow me on LinkedIn:
+# [www.linkedin.com/in/vinicius-mantovam]
+# AUTHOR: [Vinicius Mantovam]
+# DATE: 2025-08-08
+# ===================================================================
+
+
+# --- 0. USER SETUP ---
+# Change THE VARIABLES below to match your data.
+
+# 1. Define the full path to your data file (Excel or CSV).
+file_path <- "YOUR/PATH/TO/THE/FILE.xlsx"
+
+# 2. Enter the exact name of the column that identifies the different groups in your study.
+group_column_name <- "Group"
+
+# 3. Name of the folder where the plots and tables will be saved.
+output_folder <- "PCA_Results"
+
+# 4. Define the colors for each group. The number of colors should match the number of groups.
+# Example: group_colors <- c("Control" = "#0072B2", "TreatmentA" = "#D55E00", "TreatmentB" = "#009E73")
+group_colors <- NULL # Leave as NULL to use ggplot2's default colors
+
+
+# --- 1. INSTALLATION AND LOADING OF LIBRARIES ---
+# This function checks if a package is installed, installs it if necessary, and loads it.
+install_and_load_packages <- function(packages) {
+  for (pkg in packages) {
+    if (!require(pkg, character.only = TRUE)) {
+      # Check if the package is available on CRAN
+      if (pkg %in% available.packages()[, "Package"]) {
+        install.packages(pkg, dependencies = TRUE)
+      } else {
+        stop(paste("Error: The package '", pkg, "' was not found on CRAN. Please check the package name."))
+      }
+      library(pkg, character.only = TRUE)
+    }
+  }
+}
+
+required_packages <- c("readxl", "ggplot2", "tidyr", "tibble", "dplyr", "tools", "ggrepel", "writexl")
+install_and_load_packages(required_packages)
+
+
+# --- 2. DATA LOADING AND PREPARATION ---
+cat("Starting PCA script...\n")
+cat("Step 1: Loading and preparing data.\n")
+
+# Load data based on file extension
+file_extension <- tools::file_ext(file_path)
+if (file_extension == "xlsx") {
+  full_data <- read_excel(file_path)
+} else if (file_extension == "csv") {
+  full_data <- read.csv(file_path)
+} else {
+  stop("Error: Unsupported file format. Please use .xlsx or .csv.")
+}
+
+# Check if the specified group column exists in the dataframe
+if (!group_column_name %in% names(full_data)) {
+  stop(paste("Error: The column '", group_column_name, "' was not found in your file. Please check the column name in the setup section."))
+}
+
+# Store the group column as a factor and in a separate variable.
+full_data[[group_column_name]] <- as.factor(full_data[[group_column_name]])
+groups <- full_data[[group_column_name]]
+
+# Automatically identify numeric columns for PCA
+numeric_column_names <- full_data %>%
+  select(where(is.numeric)) %>%
+  names()
+
+# Remove the group column from the list of numeric columns, in case it's numeric
+numeric_column_names <- setdiff(numeric_column_names, group_column_name)
+numeric_data <- full_data[, numeric_column_names]
+
+cat("  - Numeric columns identified for PCA:", paste(numeric_column_names, collapse = ", "), "\n")
+cat("  - Group column identified:", group_column_name, "\n")
+
+
+# Handling missing values (NA) by replacing them with the column mean.
+cat("  - Checking and handling missing values (NA)...\n")
+for(col in numeric_column_names) {
+  if(any(is.na(numeric_data[[col]]))) {
+    column_mean <- mean(numeric_data[[col]], na.rm = TRUE)
+    n_missing <- sum(is.na(numeric_data[[col]]))
+    numeric_data[[col]][is.na(numeric_data[[col]])] <- column_mean
+    cat("    - In column '", col, "', ", n_missing, " missing values were replaced by the mean (", round(column_mean, 2), ").\n")
+  }
+}
+
+
+# Remove any remaining rows with missing values and filter the groups accordingly
+complete_indices <- complete.cases(numeric_data)
+clean_data <- numeric_data[complete_indices, ]
+clean_groups <- groups[complete_indices]
+
+cat("  -", sum(!complete_indices), "remaining rows with missing data were removed.\n")
+
+# Standardize the data (Z-score)
+standardized_data <- scale(clean_data)
+
+
+# --- 3. PRINCIPAL COMPONENT ANALYSIS (PCA) EXECUTION ---
+cat("\nStep 2: Executing PCA.\n")
+
+pca_result <- prcomp(standardized_data, center = TRUE, scale. = TRUE)
+
+cat("  - Summary of component importance:\n")
+print(summary(pca_result))
+
+
+# --- 4. PREPARING DATA FOR VISUALIZATION ---
+cat("\nStep 3: Preparing data for visualization.\n")
+
+scores_df <- as.data.frame(pca_result$x)
+scores_df$Group <- clean_groups
+
+loadings_df <- as.data.frame(pca_result$rotation) %>%
+  rownames_to_column(var = "Variable")
+
+
+# --- 5. VISUALIZATION AND SAVING OF RESULTS ---
+cat("\nStep 4: Generating and saving the plots.\n")
+
+# Create the results folder if it doesn't exist
+output_path <- file.path(dirname(file_path), output_folder)
+if (!dir.exists(output_path)) {
+  dir.create(output_path)
+  cat("  - Results folder '", output_folder, "' created successfully.\n")
+}
+
+# Define a consistent theme for the plots
+plot_theme <- theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5),
+    legend.position = "bottom"
+  )
+
+# --- 5.1. SCORES PLOT (PC1 vs PC2) ---
+var_pc1 <- round(summary(pca_result)$importance[2, 1] * 100, 2)
+var_pc2 <- round(summary(pca_result)$importance[2, 2] * 100, 2)
+
+pca_scores_plot <- ggplot(scores_df, aes(x = PC1, y = PC2, color = Group)) +
+  geom_point(size = 3.5, alpha = 0.8) +
+  stat_ellipse(level = 0.95, linetype = "dashed", size = 1) +
+  labs(
+    title = "PCA Scores Plot",
+    subtitle = "Sample distribution and clustering",
+    x = paste0("PC1 (", var_pc1, "%)"),
+    y = paste0("PC2 (", var_pc2, "%)"),
+    color = "Group"
+  ) +
+  plot_theme
+
+if (!is.null(group_colors)) {
+  pca_scores_plot <- pca_scores_plot + scale_color_manual(values = group_colors)
+}
+
+print(pca_scores_plot)
+
+ggsave(
+  filename = "pca_scores_plot.png",
+  plot = pca_scores_plot,
+  path = output_path,
+  width = 10, height = 8, dpi = 300, units = "in"
+)
+cat("  - Scores plot generated and saved in '", output_path, "'.\n")
+
+# --- 5.2. LOADINGS PLOT ---
+loadings_long_df <- loadings_df %>%
+  pivot_longer(cols = c("PC1", "PC2"),
+               names_to = "Component",
+               values_to = "Influence")
+
+loadings_bar_plot <- ggplot(loadings_long_df, aes(x = reorder(Variable, Influence), y = Influence, fill = Component)) +
+  geom_bar(stat = "identity", alpha = 0.8) +
+  facet_wrap(~Component, scales = "free_x") +
+  coord_flip() +
+  labs(
+    title = "Variable Influence (Loadings) on PC1 and PC2",
+    x = NULL,
+    y = "Loading Value (Influence)"
+  ) +
+  scale_fill_manual(values = c("PC1" = "#1f77b4", "PC2" = "#ff7f0e")) +
+  plot_theme +
+  theme(legend.position = "none")
+
+print(loadings_bar_plot)
+
+ggsave(
+  filename = "pca_loadings_plot.png",
+  plot = loadings_bar_plot,
+  path = output_path,
+  width = 12, height = 10, dpi = 300, units = "in"
+)
+cat("  - Loadings plot generated and saved.\n")
+
+# --- 5.3. BIPLOT (SCORES + LOADINGS) ---
+mult <- max(
+  abs(scores_df[, "PC1"]) / max(abs(loadings_df[, "PC1"])),
+  abs(scores_df[, "PC2"]) / max(abs(loadings_df[, "PC2"]))
+) * 0.7
+
+biplot <- ggplot(scores_df, aes(x = PC1, y = PC2, color = Group)) +
+  geom_point(size = 3.5, alpha = 0.6) +
+  stat_ellipse(level = 0.95, linetype = "dashed", size = 1) +
+  geom_segment(data = loadings_df,
+               aes(x = 0, y = 0, xend = PC1 * mult, yend = PC2 * mult),
+               arrow = arrow(length = unit(0.2, "cm")),
+               color = "gray30", inherit.aes = FALSE) +
+  ggrepel::geom_text_repel(data = loadings_df,
+            aes(x = PC1 * mult, y = PC2 * mult, label = Variable),
+            color = "black", size = 4, inherit.aes = FALSE,
+            box.padding = 0.5, max.overlaps = Inf) +
+  labs(
+    title = "PCA Biplot",
+    subtitle = "Sample scores with variable influence vectors",
+    x = paste0("PC1 (", var_pc1, "%)"),
+    y = paste0("PC2 (", var_pc2, "%)"),
+    color = "Group"
+  ) +
+  plot_theme
+
+if (!is.null(group_colors)) {
+  biplot <- biplot + scale_color_manual(values = group_colors)
+}
+
+print(biplot)
+
+ggsave(
+  filename = "pca_biplot.png",
+  plot = biplot,
+  path = output_path,
+  width = 11, height = 9, dpi = 300, units = "in"
+)
+cat("  - Biplot generated and saved.\n")
+
+
+# --- 6. DETAILED OUTPUT OF VARIABLE INFLUENCE (LOADINGS) ---
+cat("\nStep 5: Generating detailed output of variable influence.\n")
+
+influence_table <- as_tibble(pca_result$rotation, rownames = "Variable")
+
+influence_table <- influence_table %>%
+  mutate(
+    Contribution_PC1 = PC1^2,
+    Contribution_PC2 = PC2^2
+  )
+
+ordered_influence_table <- influence_table %>%
+  arrange(desc(Contribution_PC1)) %>%
+  mutate(across(where(is.numeric), ~ round(.x, 4))) %>%
+  select(Variable, PC1, Contribution_PC1, PC2, Contribution_PC2, everything())
+
+cat("  - Table of Variable Influence and Contribution (ordered by PC1):\n")
+print(ordered_influence_table, n = nrow(ordered_influence_table))
+
+# Saving the table to CSV and Excel files
+csv_path <- file.path(output_path, "variable_influence_results.csv")
+write.csv(ordered_influence_table, csv_path, row.names = FALSE)
+cat("  - Results table saved as CSV in '", csv_path, "'.\n")
+
+excel_path <- file.path(output_path, "variable_influence_results.xlsx")
+writexl::write_xlsx(ordered_influence_table, excel_path)
+cat("  - Results table saved as Excel in '", excel_path, "'.\n")
+
+
+cat("\nAnalysis finished! Data outputs and plots have been saved in the '", output_folder, "' folder.\n")
